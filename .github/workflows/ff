@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>견적 계산기</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+        }
+        .calculator {
+            width: 350px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .calculator h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .result {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .calculate-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            color: #fff;
+            background-color: #4caf50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .calculate-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator">
+    <h2>견적 계산기</h2>
+    <div class="input-group">
+        <label for="quantity">갯수</label>
+        <input type="number" id="quantity" placeholder="갯수를 입력하세요" min="1" oninput="updateFee()">
+    </div>
+    <div class="input-group">
+        <label for="totalAmount">총금액</label>
+        <input type="number" id="totalAmount" placeholder="총금액을 입력하세요" min="0">
+    </div>
+    <div class="input-group">
+        <label for="fee">수수료</label>
+        <input type="text" id="fee" placeholder="수수료가 여기에 표시됩니다." disabled>
+    </div>
+    <div class="input-group">
+        <label for="rate">적용 환율 (자동 업데이트)</label>
+        <input type="text" id="rate" placeholder="환율 로딩 중..." disabled>
+    </div>
+    <button class="calculate-btn" onclick="calculateEstimate()">견적 계산</button>
+    <div class="result" id="result">견적 금액: -</div>
+</div>
+
+<script>
+    const apiKey = 'd2ad6dd95f400a7db8b1062e'; // 여기에 환율 API에서 발급받은 API 키를 입력하세요.
+    const apiUrl = `https://v6.exchangerate-api.com/v6/${apiKey}/latest/JPY`;
+
+    let exchangeRate = 0;
+
+    async function fetchExchangeRate() {
+        try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            if (data.result === "success") {
+                exchangeRate = data.conversion_rates.KRW + 0.5;
+                document.getElementById('rate').value = exchangeRate.toFixed(2) + ' KRW';
+            } else {
+                document.getElementById('rate').value = "환율 로드 실패";
+                alert("환율을 가져오는 데 실패했습니다. API 키를 확인해주세요.");
+            }
+        } catch (error) {
+            console.error("환율 API 호출 오류:", error);
+            document.getElementById('rate').value = "환율 로드 실패";
+        }
+    }
+
+    function updateFee() {
+        const quantity = parseInt(document.getElementById('quantity').value) || 0;
+        const fee = quantity * 300;
+        document.getElementById('fee').value = fee;
+    }
+
+    function calculateEstimate() {
+        const quantity = parseInt(document.getElementById('quantity').value) || 0;
+        const totalAmount = parseFloat(document.getElementById('totalAmount').value) || 0;
+        const fee = parseFloat(document.getElementById('fee').value) || 0;
+
+        if (quantity <= 0 || totalAmount <= 0) {
+            alert("갯수와 총금액을 올바르게 입력하세요.");
+            return;
+        }
+
+        const estimateAmount = (totalAmount + fee) * exchangeRate;
+
+        document.getElementById('result').innerText = `견적 금액: ${Math.round(estimateAmount.toFixed(2))} KRW`;
+    }
+
+    // 페이지 로드 시 환율 자동 업데이트
+    window.onload = fetchExchangeRate;
+</script>
+
+</body>
+</html>
